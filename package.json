@@ -1,5 +1,5 @@
 {
-  "name": "auto-class",
+  "name": "auto-class-w",
   "version": "2.3.0",
   "description": "Automatically apply CSS classes to the markdown view based on a note's path and tags.",
   "main": "main.js",

@@ -1,7 +1,7 @@
 import { Modal, setIcon, TFolder } from 'obsidian';
 import { ClassMatchScope } from '../enum';
-import { ClassPath, ClassGroup, ClassTag } from '../interfaces';
-import { className, getClassList, isClassPath } from '../util';
+import { ClassPath, ClassFolder, ClassGroup, ClassTag } from '../interfaces';
+import { className, getClassList, isClassPath, isClassFolder } from '../util';
 import { AutoClassPlugin } from '../plugin';
 import { SuggestModal } from './suggest';
 
@@ -9,10 +9,14 @@ const c = className('auto-class-manage-match');
 
 export class ManageMatchModal extends Modal {
   readonly suggestModal = new SuggestModal(this.app);
-  classMatch: ClassPath | ClassTag | null = null;
+  classMatch: ClassPath | ClassFolder | ClassTag | null = null;
   group: ClassGroup | null = null;
-  updatedClassMatch: ClassPath | ClassTag | null = null;
-  save: (original: ClassPath | ClassTag, updated: ClassPath | ClassTag, group: ClassGroup | null) => Promise<void>;
+  updatedClassMatch: ClassPath | ClassFolder | ClassTag | null = null;
+  save: (
+    original: ClassPath | ClassFolder | ClassTag,
+    updated: ClassPath | ClassFolder | ClassTag,
+    group: ClassGroup | null
+  ) => Promise<void>;
 
   constructor(plugin: AutoClassPlugin) {
     super(plugin.app);
@@ -30,7 +34,8 @@ export class ManageMatchModal extends Modal {
   display(): void {
     this.contentEl.empty();
     const isPath = isClassPath(this.classMatch);
-    isPath ? this.renderPath() : this.renderTag();
+    const isFolder = isClassFolder(this.classMatch);
+    isPath ? this.renderPath() : isFolder ? this.renderFolder() : this.renderTag();
     this.renderScopeDropdown(this.contentEl);
     this.renderClassInput(this.contentEl);
     this.renderClasses(this.contentEl);
@@ -62,6 +67,28 @@ export class ManageMatchModal extends Modal {
     });
     matchInput.addEventListener('change', () => {
       (this.updatedClassMatch as ClassPath).path = matchInput.value;
+    });
+  }
+
+  private renderFolder(): void {
+    this.titleEl.setText('Edit folder');
+
+    const { matchButton, matchInput } = this.renderMatchInput(
+      this.contentEl,
+      true,
+      (this.updatedClassMatch as ClassFolder).folder
+    );
+    const folders: TFolder[] = this.app.vault.getAllLoadedFiles().filter((f) => f instanceof TFolder) as TFolder[];
+    matchButton.addEventListener('click', () => {
+      this.suggestModal.selectedItem = null;
+      this.suggestModal.items = folders;
+      this.suggestModal.callback = (folder: TFolder) => {
+        matchInput.value = folder.path;
+      };
+      this.suggestModal.open();
+    });
+    matchInput.addEventListener('change', () => {
+      (this.updatedClassMatch as ClassFolder).folder = matchInput.value;
     });
   }
 

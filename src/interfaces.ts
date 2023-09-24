@@ -2,13 +2,13 @@ import { MarkdownView } from 'obsidian';
 import { ClassMatchScope } from './enum';
 
 export interface AutoClassPluginSettings {
-  matches: Array<ClassPath | ClassTag | ClassGroup>;
+  matches: Array<ClassPath | ClassFolder | ClassTag | ClassGroup>;
   version: string;
 }
 
 export interface ClassGroup {
   name: string;
-  members: Array<ClassPath | ClassTag>;
+  members: Array<ClassPath | ClassFolder | ClassTag>;
   collapsed: boolean;
 }
 
@@ -19,6 +19,10 @@ export interface ClassMatch {
 
 export interface ClassPath extends ClassMatch {
   path: string;
+}
+
+export interface ClassFolder extends ClassMatch {
+  folder: string;
 }
 
 export interface ClassTag extends ClassMatch {

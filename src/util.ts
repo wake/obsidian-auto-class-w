@@ -1,15 +1,19 @@
-import { ClassPath, ClassGroup, ClassTag } from './interfaces';
+import { ClassPath, ClassFolder, ClassGroup, ClassTag } from './interfaces';
 import { minimatch } from 'minimatch';
 
-export function isClassPath(value: ClassPath | ClassTag | ClassGroup): value is ClassPath {
+export function isClassPath(value: ClassPath | ClassFolder | ClassTag | ClassGroup): value is ClassPath {
   return 'path' in value;
 }
 
-export function isClassTag(value: ClassPath | ClassTag | ClassGroup): value is ClassTag {
+export function isClassFolder(value: ClassPath | ClassFolder | ClassTag | ClassGroup): value is ClassFolder {
+  return 'folder' in value;
+}
+
+export function isClassTag(value: ClassPath | ClassFolder | ClassTag | ClassGroup): value is ClassTag {
   return 'tag' in value;
 }
 
-export function isClassGroup(value: ClassPath | ClassTag | ClassGroup): value is ClassGroup {
+export function isClassGroup(value: ClassPath | ClassFolder | ClassTag | ClassGroup): value is ClassGroup {
   return 'members' in value && 'collapsed' in value;
 }
 
