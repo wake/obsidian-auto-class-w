@@ -1,10 +1,10 @@
 import { getAllTags, MarkdownView, Plugin } from 'obsidian';
 import { DEFAULT_SETTINGS } from './constants';
 import { ClassMatchScope } from './enum';
-import { AutoClassPluginSettings, ClassPath, ClassTag } from './interfaces';
+import { AutoClassPluginSettings, ClassPath, ClassFolder, ClassTag } from './interfaces';
 import { migrate } from './migrations';
 import { AutoClassPluginSettingsTab } from './settings/settings';
-import { isClassGroup, isClassPath, isClassTag, matchPathGlob } from './util';
+import { isClassGroup, isClassPath, isClassFolder, isClassTag, matchPathGlob } from './util';
 
 export class AutoClassPlugin extends Plugin {
   appliedClasses = new WeakMap<MarkdownView, string[]>();
@@ -39,8 +39,9 @@ export class AutoClassPlugin extends Plugin {
 
     // Remove and apply classes for each applicable view
     activeViews.forEach((view) => {
+      console.log(activeViews);
       this.removePreviousClasses(view);
-      let matches: Array<ClassPath | ClassTag> = [];
+      let matches: Array<ClassPath | ClassFolder | ClassTag> = [];
       let container: Element;
       if (this.isReadMode(view)) {
         matches = this.getMatches(view, allClasses, ClassMatchScope.Read);
@@ -100,23 +101,38 @@ export class AutoClassPlugin extends Plugin {
    */
   private getMatches(
     view: MarkdownView,
-    allClasses: Array<ClassPath | ClassTag>,
+    allClasses: Array<ClassPath | ClassFolder | ClassTag>,
     scope: ClassMatchScope
-  ): Array<ClassPath | ClassTag> {
+  ): Array<ClassPath | ClassFolder | ClassTag> {
     const fileCache = this.app.metadataCache.getFileCache(view.file);
+    console.log(fileCache.blocks);
     const viewTags = getAllTags(fileCache);
-    return allClasses.filter((pathOrTag) => {
-      if (pathOrTag.scope !== scope && pathOrTag.scope !== ClassMatchScope.Both) {
+    const viewLinks = fileCache.links;
+
+    console.log('== fileCache ==', fileCache, '== viewTags ==', viewTags, '== viewLinks ==', viewLinks);
+
+    return allClasses.filter((pathOrFolderOrTag) => {
+      if (pathOrFolderOrTag.scope !== scope && pathOrFolderOrTag.scope !== ClassMatchScope.Both) {
         return false;
       }
-      if (isClassPath(pathOrTag)) {
+      if (isClassPath(pathOrFolderOrTag)) {
         if (this.settings.usePathGlob === true) {
-          return matchPathGlob(view.file.path, pathOrTag.path);
+          return matchPathGlob(view.file.path, pathOrFolderOrTag.path);
         } else {
-          return view.file.path.startsWith(pathOrTag.path);
+          return view.file.path.startsWith(pathOrFolderOrTag.path);
         }
-      } else if (isClassTag(pathOrTag)) {
-        return viewTags.includes(pathOrTag.tag);
+      } else if (isClassFolder(pathOrFolderOrTag)) {
+        //return viewLinks.map (link => link.link).some (linkPath => linkPath.startsWith(pathOrFolderOrTag.folder))
+        return viewLinks.some((link) => {
+          const linkPath = link.link;
+          if (this.settings.usePathGlob === true) {
+            return matchPathGlob(linkPath, pathOrFolderOrTag.folder);
+          } else {
+            return linkPath.startsWith(pathOrFolderOrTag.folder);
+          }
+        });
+      } else if (isClassTag(pathOrFolderOrTag)) {
+        return viewTags.includes(pathOrFolderOrTag.tag);
       }
     });
   }
